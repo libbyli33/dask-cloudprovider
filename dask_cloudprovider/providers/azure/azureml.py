@@ -344,6 +344,7 @@ class AzureMLCluster(Cluster):
             print ("before run")
             run = self.parent_run.submit_child(child_run_config, tags=self.tags)
             print ("after run")
+            print (run)
         else:
             # submit scheduler run
             exp = Experiment(self.workspace, self.experiment_name)
