@@ -94,6 +94,7 @@ class AzureMLCluster(Cluster):
         compute_target,
         experiment_name=None,
         initial_node_count=None,
+        run=None,
         parent_run=None,
         jupyter=None,
         jupyter_port=None,
