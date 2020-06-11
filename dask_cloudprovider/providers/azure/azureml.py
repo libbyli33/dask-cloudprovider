@@ -121,8 +121,9 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
-        print ("in init")
-        print ("parent run")
+        print ("in init check parent_run and run")
+        print (parent_run)
+        print (run)
         self.parent_run = parent_run
 
         ## GPU RUN INFO
