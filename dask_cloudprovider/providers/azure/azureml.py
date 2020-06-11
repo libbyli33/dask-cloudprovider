@@ -120,6 +120,8 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
+        print ("in init")
+        print ("parent run")
         self.parent_run = parent_run
 
         ## GPU RUN INFO
@@ -323,6 +325,7 @@ class AzureMLCluster(Cluster):
         self.__print_message("Setting up cluster")
         run = None
         if self.parent_run:
+            print ("hit self.parent_run")
             ## scheduler run as child run
             run_config = RunConfiguration()
             run_config.environment = self.environment_definition
@@ -336,8 +339,9 @@ class AzureMLCluster(Cluster):
                 arguments=args,
                 run_config=run_config,
             )
-
+            print ("before run")
             run = self.parent_run.submit_child(child_run_config, tags=self.tags)
+            print ("after run")
         else:
             # submit scheduler run
             exp = Experiment(self.workspace, self.experiment_name)
