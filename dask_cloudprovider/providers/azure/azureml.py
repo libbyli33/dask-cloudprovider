@@ -117,6 +117,7 @@ class AzureMLCluster(Cluster):
         self,
         workspace,
         environment_definition,
+        parent_run,
         compute_target=None,
         experiment_name=None,
         initial_node_count=None,
@@ -139,6 +140,7 @@ class AzureMLCluster(Cluster):
         self.workspace = workspace
         self.compute_target = compute_target
         self.environment_definition = environment_definition
+        self.parent_run = parent_run
 
         ### EXPERIMENT DEFINITION
         self.experiment_name = experiment_name
@@ -347,6 +349,7 @@ class AzureMLCluster(Cluster):
     async def __create_cluster(self):
         run_config = RunConfiguration()
         run_config.environment = self.environment_definition
+        run_config.target = self.compute_target
 
         args = []
         for key, value in self.scheduler_params.items():
@@ -378,7 +381,7 @@ class AzureMLCluster(Cluster):
         #     inputs=self.datastores,
         # )
 
-        run = exp.submit(estimator, tags=self.tags)
+        # run = exp.submit(estimator, tags=self.tags)
 
         self.__print_message("Waiting for scheduler node's IP")
 
