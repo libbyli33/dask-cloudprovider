@@ -331,6 +331,7 @@ class AzureMLCluster(Cluster):
             ## scheduler run as child run
             run_config = RunConfiguration()
             run_config.environment = self.environment_definition
+            run_config.compute_target = self.compute_target
             args = []
             for key, value in self.scheduler_params.items():
                 args.append(f"{key}={value}")
