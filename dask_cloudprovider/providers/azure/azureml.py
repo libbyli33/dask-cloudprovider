@@ -94,7 +94,7 @@ class AzureMLCluster(Cluster):
         compute_target,
         experiment_name=None,
         initial_node_count=None,
-        run=None,
+        parent_run=None,
         jupyter=None,
         jupyter_port=None,
         dashboard_port=None,
@@ -120,7 +120,7 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
-        self.parent_run = run
+        self.parent_run = parent_run
 
         ## GPU RUN INFO
         self.workspace_vm_sizes = AmlCompute.supported_vmsizes(self.workspace)
