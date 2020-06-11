@@ -148,7 +148,7 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
-        self.parent_run = run
+        # self.parent_run = run
 
         ### GPU RUN INFO
         # self.workspace_vm_sizes = AmlCompute.supported_vmsizes(self.workspace)
