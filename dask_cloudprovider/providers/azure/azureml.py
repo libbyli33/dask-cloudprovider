@@ -32,83 +32,57 @@ except:
 
 class AzureMLCluster(Cluster):
     """ Deploy a Dask cluster using Azure ML
-
     This creates a dask scheduler and workers on an Azure ML Compute Target.
-
     Parameters
     ----------
     workspace: azureml.core.Workspace (required)
         Azure ML Workspace - see https://aka.ms/azureml/workspace
-
     compute_target: azureml.core.ComputeTarget (required)
         Azure ML Compute Target - see https://aka.ms/azureml/computetarget
-
     environment_definition: azureml.core.Environment (required)
         Azure ML Environment - see https://aka.ms/azureml/environments
-
     experiment_name: str (optional)
         The name of the Azure ML Experiment used to control the cluster.
-
         Defaults to ``dask-cloudprovider``.
-
     initial_node_count: int (optional)
         The initial number of nodes for the Dask Cluster.
-
         Defaults to ``1``.
-
     jupyter: bool (optional)
         Flag to start JupyterLab session on the headnode of the cluster.
-
         Defaults to ``False``.
-
     jupyter_port: int (optional)
         Port on headnode to use for hosting JupyterLab session.
-
         Defaults to ``9000``.
-
     dashboard_port: int (optional)
         Port on headnode to use for hosting Dask dashboard.
-
         Defaults to ``9001``.
-
     scheduler_port: int (optional)
         Port to map the scheduler port to via SSH-tunnel if machine not on the same VNET.
-
         Defaults to ``9002``.
-
     additional_ports: list[tuple[int, int]] (optional)
         Additional ports to forward. This requires a list of tuples where the first element
         is the port to open on the headnode while the second element is the port to map to
         or forward via the SSH-tunnel.
-
         Defaults to ``[]``.
-
     admin_username: str (optional)
         Username of the admin account for the AzureML Compute.
         Required for runs that are not on the same VNET. Defaults to empty string.
         Throws Exception if machine not on the same VNET.
-
         Defaults to ``""``.
-
     admin_ssh_key: str (optional)
         Location of the SSH secret key used when creating the AzureML Compute.
         The key should be passwordless if run from a Jupyter notebook.
         The ``id_rsa`` file needs to have 0700 permissions set.
         Required for runs that are not on the same VNET. Defaults to empty string.
         Throws Exception if machine not on the same VNET.
-
         Defaults to ``""``.
-
     datastores: List[str] (optional)
         List of Azure ML Datastores to be mounted on the headnode -
         see https://aka.ms/azureml/data and https://aka.ms/azureml/datastores.
-
         Defaults to ``[]``. To mount all datastores in the workspace,
         set to ``[ws.datastores[datastore] for datastore in ws.datastores]``.
-
     asynchronous: bool (optional)
         Flag to run jobs asynchronously.
-
     **kwargs: dict
         Additional keyword arguments.
     """
@@ -117,8 +91,7 @@ class AzureMLCluster(Cluster):
         self,
         workspace,
         environment_definition,
-        parent_run,
-        compute_target=None,
+        compute_target,
         experiment_name=None,
         initial_node_count=None,
         run=None,
@@ -140,7 +113,6 @@ class AzureMLCluster(Cluster):
         self.workspace = workspace
         self.compute_target = compute_target
         self.environment_definition = environment_definition
-        self.parent_run = parent_run
 
         ### EXPERIMENT DEFINITION
         self.experiment_name = experiment_name
@@ -148,19 +120,19 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
-        # self.parent_run = run
+        self.parent_run = run
 
-        ### GPU RUN INFO
-        # self.workspace_vm_sizes = AmlCompute.supported_vmsizes(self.workspace)
-        # self.workspace_vm_sizes = [
-        #     (e["name"].lower(), e["gpus"]) for e in self.workspace_vm_sizes
-        # ]
-        # self.workspace_vm_sizes = dict(self.workspace_vm_sizes)
+        ## GPU RUN INFO
+        self.workspace_vm_sizes = AmlCompute.supported_vmsizes(self.workspace)
+        self.workspace_vm_sizes = [
+            (e["name"].lower(), e["gpus"]) for e in self.workspace_vm_sizes
+        ]
+        self.workspace_vm_sizes = dict(self.workspace_vm_sizes)
 
-    #    self.compute_target_vm_size = self.compute_target.serialize()["properties"][
-    #         "status"
-    #     ]["vmSize"].lower()
-        self.n_gpus_per_node = 2 # self.workspace_vm_sizes[self.compute_target_vm_size]
+        self.compute_target_vm_size = self.compute_target.serialize()["properties"][
+            "status"
+        ]["vmSize"].lower()
+        self.n_gpus_per_node = self.workspace_vm_sizes[self.compute_target_vm_size]
         self.use_gpu = True if self.n_gpus_per_node > 0 else False
 
         ### JUPYTER AND PORT FORWARDING
@@ -347,41 +319,41 @@ class AzureMLCluster(Cluster):
             return self.run.get_metrics()["scheduler"]
 
     async def __create_cluster(self):
-        run_config = RunConfiguration()
-        run_config.environment = self.environment_definition
-        run_config.target = self.compute_target
+        self.__print_message("Setting up cluster")
+        run = None
+        if self.parent_run:
+            ## scheduler run as child run
+            run_config = RunConfiguration()
+            run_config.environment = self.environment_definition
+            args = []
+            for key, value in self.scheduler_params.items():
+                args.append(f"{key}={value}")
 
-        args = []
-        for key, value in self.scheduler_params.items():
-            args.append(f"{key}={value}")
+            child_run_config = ScriptRunConfig(
+                source_directory=os.path.join(self.abs_path, "setup"),
+                script="start_scheduler.py",
+                arguments=args,
+                run_config=run_config,
+            )
 
-        child_run_config = ScriptRunConfig(
-            source_directory=os.path.join(self.abs_path, "setup"),
-            script="start_scheduler.py",
-            arguments=args,
-            run_config=run_config,
-        )
+            run = self.parent_run.submit_child(child_run_config, tags=self.tags)
+        else:
+            # submit scheduler run
+            self.__print_message("Submitting the experiment")
+            exp = Experiment(self.workspace, self.experiment_name)
+            estimator = Estimator(
+                os.path.join(self.abs_path, "setup"),
+                compute_target=self.compute_target,
+                entry_script="start_scheduler.py",
+                environment_definition=self.environment_definition,
+                script_params=self.scheduler_params,
+                node_count=1,  ### start only scheduler
+                distributed_training=MpiConfiguration(),
+                use_docker=True,
+                inputs=self.datastores,
+            )
 
-        run = self.parent_run.submit_child(child_run_config, tags=self.tags)
-
-        # self.__print_message("Setting up cluster")
-
-        # # submit run
-        # self.__print_message("Submitting the experiment")
-        # exp = Experiment(self.workspace, self.experiment_name)
-        # estimator = Estimator(
-        #     os.path.join(self.abs_path, "setup"),
-        #     compute_target=self.compute_target,
-        #     entry_script="start_scheduler.py",
-        #     environment_definition=self.environment_definition,
-        #     script_params=self.scheduler_params,
-        #     node_count=1,  ### start only scheduler
-        #     distributed_training=MpiConfiguration(),
-        #     use_docker=True,
-        #     inputs=self.datastores,
-        # )
-
-        # run = exp.submit(estimator, tags=self.tags)
+            run = exp.submit(estimator, tags=self.tags)
 
         self.__print_message("Waiting for scheduler node's IP")
 
@@ -398,13 +370,13 @@ class AzureMLCluster(Cluster):
             logger.exception("Failed to start the AzureML cluster")
             raise Exception("Failed to start the AzureML cluster.")
 
+        self.run = run
         print("\n\n")
 
         ### SET FLAGS
         self.scheduler_ip_port = run.get_metrics()["scheduler"]
         self.worker_params["--scheduler_ip_port"] = self.scheduler_ip_port
         self.__print_message(f'Scheduler: {run.get_metrics()["scheduler"]}')
-        self.run = run
 
         logger.info(f'Scheduler: {run.get_metrics()["scheduler"]}')
 
@@ -423,10 +395,11 @@ class AzureMLCluster(Cluster):
         self.__print_message("Connections established") 
         self.__print_message(f"Scaling to {self.initial_node_count} workers")
 
+        # LOGIC TO KEEP PROPER TRACK OF WORKERS IN `scale`
         if self.initial_node_count > 1:
             self.scale(
                 self.initial_node_count
-            )  # LOGIC TO KEEP PROPER TRACK OF WORKERS IN `scale`
+            )
         self.__print_message(f"Scaling is done")
 
     async def __update_links(self):
@@ -730,7 +703,7 @@ class AzureMLCluster(Cluster):
         """ Scale up the number of workers.
         """
         run_config = RunConfiguration()
-       # run_config.target = self.compute_target
+        run_config.target = self.compute_target
         run_config.environment = self.environment_definition
 
         scheduler_ip = self.run.get_metrics()["scheduler"]
@@ -770,10 +743,12 @@ class AzureMLCluster(Cluster):
         self.__print_message("Disconnecting all workers.")
         while self.workers_list:
             child_run = self.workers_list.pop()
+            child_run.complete()
             child_run.cancel()
 
         self.__print_message("Disconnecting scheduler.")
         if self.run:
+            self.run.complete()
             self.run.cancel()
 
         self.status = "closed"
