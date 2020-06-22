@@ -1,6 +1,6 @@
 from azureml.core import Experiment, RunConfiguration, ScriptRunConfig
 from azureml.core.compute import AmlCompute
-from azureml.train.estimator import Estimator
+# from azureml.train.estimator import Estimator
 from azureml.core.runconfig import MpiConfiguration
 
 import json
@@ -326,42 +326,41 @@ class AzureMLCluster(Cluster):
     async def __create_cluster(self):
         self.__print_message("Setting up cluster")
         run = None
+        run_config = RunConfiguration()
+        run_config.environment = self.environment_definition
+        run_config.target = self.compute_target
+        args = []
+        for key, value in self.scheduler_params.items():
+            args.append(f"{key}={value}")
+
+        run_config = ScriptRunConfig(
+            source_directory=os.path.join(self.abs_path, "setup"),
+            script="start_scheduler.py",
+            arguments=args,
+            run_config=run_config,
+        )
         if self.parent_run:
-            print ("hit self.parent_run")
             ## scheduler run as child run
-            run_config = RunConfiguration()
-            run_config.environment = self.environment_definition
-            run_config.target = self.compute_target
-            args = []
-            for key, value in self.scheduler_params.items():
-                args.append(f"{key}={value}")
-
-            child_run_config = ScriptRunConfig(
-                source_directory=os.path.join(self.abs_path, "setup"),
-                script="start_scheduler.py",
-                arguments=args,
-                run_config=run_config,
-            )
-            print ("before run")
-            run = self.parent_run.submit_child(child_run_config, tags=self.tags)
-            print ("after run")
-            print (run)
+            run = self.parent_run.submit_child(run_config, tags=self.tags)
         else:
-            # submit scheduler run
             exp = Experiment(self.workspace, self.experiment_name)
-            estimator = Estimator(
-                os.path.join(self.abs_path, "setup"),
-                compute_target=self.compute_target,
-                entry_script="start_scheduler.py",
-                environment_definition=self.environment_definition,
-                script_params=self.scheduler_params,
-                node_count=1,  ### start only scheduler
-                distributed_training=MpiConfiguration(),
-                use_docker=True,
-                inputs=self.datastores,
-            )
+            run = exp.submit(run_config, tags=self.tags)
 
-            run = exp.submit(estimator, tags=self.tags)
+            # submit scheduler run
+            # exp = Experiment(self.workspace, self.experiment_name)
+            # estimator = Estimator(
+            #     os.path.join(self.abs_path, "setup"),
+            #     compute_target=self.compute_target,
+            #     entry_script="start_scheduler.py",
+            #     environment_definition=self.environment_definition,
+            #     script_params=self.scheduler_params,
+            #     node_count=1,  ### start only scheduler
+            #     distributed_training=MpiConfiguration(),
+            #     use_docker=True,
+            #     inputs=self.datastores,
+            # )
+
+            # run = exp.submit(estimator, tags=self.tags)
 
         self.__print_message("Waiting for scheduler node's IP")
 
