@@ -341,7 +341,7 @@ class AzureMLCluster(Cluster):
                 args.append(f"{key}={value}")
 
             dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-            input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path=self.path_on_compute)
+            input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
             args.append(input1)
 
             print ("in create_cluster")
@@ -732,7 +732,7 @@ class AzureMLCluster(Cluster):
         ]
 
         dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-        input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path=self.path_on_compute)
+        input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
         args.append(input1)
 
         print ("in scale up")
