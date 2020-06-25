@@ -107,6 +107,8 @@ class AzureMLCluster(Cluster):
         admin_ssh_key=None,
         datastores=None,
         file_dataset_registered_name=None,
+        dataset_config_name=None,
+        path_on_compute=None,
         code_store=None,
         asynchronous=False,
         **kwargs,
@@ -196,8 +198,10 @@ class AzureMLCluster(Cluster):
         ### DATASTORES
         self.datastores = datastores
 
-        ### DATASET
+        ### INFO FOR DATASET MOUNT
         self.file_dataset_registered_name = file_dataset_registered_name
+        self.dataset_config_name = dataset_config_name
+        self.path_on_compute = path_on_compute
 
         ### FUTURE EXTENSIONS
         self.kwargs = kwargs
@@ -337,7 +341,8 @@ class AzureMLCluster(Cluster):
                 args.append(f"{key}={value}")
 
             dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-            input1 = dataset.as_named_input("userdata").as_mount()
+            # input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path=self.path_on_compute)
+            input1 = dataset.as_named_input(self.dataset_config_name).as_mount()
             args.append(input1)
 
             print ("in create_cluster")
@@ -726,6 +731,15 @@ class AzureMLCluster(Cluster):
             f"--n_gpus_per_node={self.n_gpus_per_node}",
             f"--worker_death_timeout={self.worker_death_timeout}",
         ]
+
+        dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
+        # input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path=self.path_on_compute)
+        input1 = dataset.as_named_input(self.dataset_config_name).as_mount()
+        args.append(input1)
+
+        print ("in scale up")
+        print ("after DataConsumption Config has been appended to args")
+        print (args)
 
         child_run_config = ScriptRunConfig(
             source_directory=os.path.join(self.abs_path, "setup"),
