@@ -1,4 +1,4 @@
-from azureml.core import Experiment, RunConfiguration, ScriptRunConfig
+from azureml.core import Experiment, RunConfiguration, ScriptRunConfig, Dataset
 from azureml.core.compute import AmlCompute
 from azureml.train.estimator import Estimator
 from azureml.core.runconfig import MpiConfiguration
@@ -106,6 +106,7 @@ class AzureMLCluster(Cluster):
         admin_username=None,
         admin_ssh_key=None,
         datastores=None,
+        file_dataset_registered_name=None,
         code_store=None,
         asynchronous=False,
         **kwargs,
@@ -121,9 +122,6 @@ class AzureMLCluster(Cluster):
 
         ### ENVIRONMENT AND VARIABLES
         self.initial_node_count = initial_node_count
-        print ("in init check parent_run and run")
-        print (parent_run)
-        print (run)
         self.parent_run = parent_run
 
         ## GPU RUN INFO
@@ -197,6 +195,9 @@ class AzureMLCluster(Cluster):
 
         ### DATASTORES
         self.datastores = datastores
+
+        ### DATASET
+        self.file_dataset_registered_name = file_dataset_registered_name
 
         ### FUTURE EXTENSIONS
         self.kwargs = kwargs
@@ -334,6 +335,14 @@ class AzureMLCluster(Cluster):
             args = []
             for key, value in self.scheduler_params.items():
                 args.append(f"{key}={value}")
+
+            dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
+            input1 = dataset.as_named_input("userdata").as_mount()
+            args.append(input1)
+
+            print ("in create_cluster")
+            print ("after DataConsumption Config has been appended to args")
+            print (args)
 
             child_run_config = ScriptRunConfig(
                 source_directory=os.path.join(self.abs_path, "setup"),
