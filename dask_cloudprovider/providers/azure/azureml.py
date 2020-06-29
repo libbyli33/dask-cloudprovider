@@ -739,21 +739,21 @@ class AzureMLCluster(Cluster):
             f"--worker_death_timeout={self.worker_death_timeout}",
         ]
 
-        print ("in scale up")
-        file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
-        dataset_config_name = self.kwargs.get('dataset_config_name', None)
-        path_on_compute = self.kwargs.get('path_on_compute', None)
-        print ("check kwargs")
-        print (file_dataset_registered_name)
-        print (dataset_config_name)
-        print (path_on_compute)
-        if path_on_compute is not None:
-            print ("path_on_compute is not None")
-            dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
-            input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
-            args.append(input1)
-            print ("after DataConsumption Config has been appended to args")
-            print (args)
+        # print ("in scale up")
+        # file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
+        # dataset_config_name = self.kwargs.get('dataset_config_name', None)
+        # path_on_compute = self.kwargs.get('path_on_compute', None)
+        # print ("check kwargs")
+        # print (file_dataset_registered_name)
+        # print (dataset_config_name)
+        # print (path_on_compute)
+        # if path_on_compute is not None:
+        #     print ("path_on_compute is not None")
+        #     dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
+        #     input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
+        #     args.append(input1)
+        #     print ("after DataConsumption Config has been appended to args")
+        #     print (args)
 
         child_run_config = ScriptRunConfig(
             source_directory=os.path.join(self.abs_path, "setup"),
