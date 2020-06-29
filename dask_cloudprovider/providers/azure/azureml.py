@@ -106,9 +106,9 @@ class AzureMLCluster(Cluster):
         admin_username=None,
         admin_ssh_key=None,
         datastores=None,
-        file_dataset_registered_name=None,
-        dataset_config_name=None,
-        path_on_compute=None,
+        # file_dataset_registered_name=None,
+        # dataset_config_name=None,
+        # path_on_compute=None,
         code_store=None,
         asynchronous=False,
         **kwargs,
@@ -199,9 +199,9 @@ class AzureMLCluster(Cluster):
         self.datastores = datastores
 
         ### INFO FOR DATASET MOUNT
-        self.file_dataset_registered_name = file_dataset_registered_name
-        self.dataset_config_name = dataset_config_name
-        self.path_on_compute = path_on_compute
+        # self.file_dataset_registered_name = file_dataset_registered_name
+        # self.dataset_config_name = dataset_config_name
+        # self.path_on_compute = path_on_compute
 
         ### FUTURE EXTENSIONS
         self.kwargs = kwargs
@@ -341,10 +341,17 @@ class AzureMLCluster(Cluster):
                 args.append(f"{key}={value}")
 
             print ("in create_cluster")
-            if self.path_on_compute is not None:
+            file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
+            dataset_config_name = self.kwargs.get('dataset_config_name', None)
+            path_on_compute = self.kwargs.get('path_on_compute', None)
+            print ("check kwargs")
+            print (file_dataset_registered_name)
+            print (dataset_config_name)
+            print (path_on_compute)
+            if path_on_compute is not None:
                 print ("path_on_compute is not None")
-                dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-                input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
+                dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
+                input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
                 args.append(input1)
                 print ("after DataConsumption Config has been appended to args")
                 print (args)
@@ -733,10 +740,17 @@ class AzureMLCluster(Cluster):
         ]
 
         print ("in scale up")
-        if self.path_on_compute is not None:
+        file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
+        dataset_config_name = self.kwargs.get('dataset_config_name', None)
+        path_on_compute = self.kwargs.get('path_on_compute', None)
+        print ("check kwargs")
+        print (file_dataset_registered_name)
+        print (dataset_config_name)
+        print (path_on_compute)
+        if path_on_compute is not None:
             print ("path_on_compute is not None")
-            dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-            input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
+            dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
+            input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
             args.append(input1)
             print ("after DataConsumption Config has been appended to args")
             print (args)
