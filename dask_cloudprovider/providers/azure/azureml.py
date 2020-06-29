@@ -340,13 +340,14 @@ class AzureMLCluster(Cluster):
             for key, value in self.scheduler_params.items():
                 args.append(f"{key}={value}")
 
-            dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-            input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
-            args.append(input1)
-
             print ("in create_cluster")
-            print ("after DataConsumption Config has been appended to args")
-            print (args)
+            if self.path_on_compute is not None:
+                print ("path_on_compute is not None")
+                dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
+                input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
+                args.append(input1)
+                print ("after DataConsumption Config has been appended to args")
+                print (args)
 
             child_run_config = ScriptRunConfig(
                 source_directory=os.path.join(self.abs_path, "setup"),
@@ -731,13 +732,14 @@ class AzureMLCluster(Cluster):
             f"--worker_death_timeout={self.worker_death_timeout}",
         ]
 
-        dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
-        input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
-        args.append(input1)
-
         print ("in scale up")
-        print ("after DataConsumption Config has been appended to args")
-        print (args)
+        if self.path_on_compute is not None:
+            print ("path_on_compute is not None")
+            dataset = Dataset.get_by_name(workspace=self.workspace, name=self.file_dataset_registered_name)
+            input1 = dataset.as_named_input(self.dataset_config_name).as_mount(path_on_compute=self.path_on_compute)
+            args.append(input1)
+            print ("after DataConsumption Config has been appended to args")
+            print (args)
 
         child_run_config = ScriptRunConfig(
             source_directory=os.path.join(self.abs_path, "setup"),
