@@ -429,6 +429,8 @@ class AzureMLCluster(Cluster):
 
     async def __update_links(self):
         hostname = socket.gethostname()
+        print ("check host name")
+        print (hostname)
         location = self.workspace.get_details()["location"]
         token = self.run.get_metrics()["token"]
 
