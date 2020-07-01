@@ -305,6 +305,8 @@ class AzureMLCluster(Cluster):
             ip, port = self.scheduler_ip_port.split(":")
             print (ip)
             print (port)
+            print ("check current host")
+            print (socket.gethostbyname(socket.gethostname()))
             socket.create_connection((ip, port), 10)
             print ("after socket.create_connection")
             self.same_vnet = True
