@@ -414,7 +414,7 @@ class AzureMLCluster(Cluster):
         logger.info(f'Scheduler: {run.get_metrics()["scheduler"]}')
 
         ### CHECK IF ON THE SAME VNET
-        print ("check if on teh same vnet")
+        print ("check if on the same vnet")
         while self.same_vnet is None:
             await self.sync(self.__check_if_scheduler_ip_reachable)
             time.sleep(1)
@@ -438,7 +438,7 @@ class AzureMLCluster(Cluster):
 
     async def __update_links(self):
         hostname = socket.gethostname()
-        print ("check host name")
+        print ("check scheduler host name")
         print (hostname)
         location = self.workspace.get_details()["location"]
         token = self.run.get_metrics()["token"]
@@ -776,6 +776,9 @@ class AzureMLCluster(Cluster):
         for i in range(workers):
             child_run = self.run.submit_child(child_run_config, tags=self.tags)
             self.workers_list.append(child_run)
+            hostname = socket.gethostname()
+            print ("check worker host name")
+            print (hostname)
 
     # scale down
     def scale_down(self, workers=1):
