@@ -299,18 +299,24 @@ class AzureMLCluster(Cluster):
         Private method to determine if running in the cloud within the same VNET
         and the scheduler node is reachable
         """
+        print ("check_if_schduler_ip_reachable")
         try:
+            print ("in try block")
             ip, port = self.scheduler_ip_port.split(":")
+            print (ip)
+            print (port)
             socket.create_connection((ip, port), 10)
+            print ("after socket.create_connection")
             self.same_vnet = True
             self.__print_message("On the same VNET")
             logger.info("On the same VNET")
         except socket.timeout as e:
-
+            print ("hit in the socket.timeout exception")
             self.__print_message("Not on the same VNET")
             logger.info("On the same VNET")
             self.same_vnet = False
         except ConnectionRefusedError as e:
+            print ("hit in the ConnectionRefusedError exception")
             logger.info(e)
             pass
 
@@ -406,6 +412,7 @@ class AzureMLCluster(Cluster):
         logger.info(f'Scheduler: {run.get_metrics()["scheduler"]}')
 
         ### CHECK IF ON THE SAME VNET
+        print ("check if on teh same vnet")
         while self.same_vnet is None:
             await self.sync(self.__check_if_scheduler_ip_reachable)
             time.sleep(1)
