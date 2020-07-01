@@ -113,6 +113,8 @@ class AzureMLCluster(Cluster):
         asynchronous=False,
         **kwargs,
     ):
+        print ("check host name in the end of the init function")
+        print (socket.gethostname())
         ### REQUIRED PARAMETERS
         self.workspace = workspace
         self.compute_target = compute_target
@@ -222,6 +224,9 @@ class AzureMLCluster(Cluster):
             self._loop_runner.start()
             self.sync(self.__get_defaults)
             self.sync(self.__create_cluster)
+
+        print ("check host name in the end of the init function")
+        print (socket.gethostname())
 
     async def __get_defaults(self):
         self.config = dask.config.get("cloudprovider.azure", {})
@@ -339,6 +344,8 @@ class AzureMLCluster(Cluster):
     async def __create_cluster(self):
         self.__print_message("Setting up cluster")
         run = None
+        print ("check host name in the beginning of __create_clusters")
+        print (socket.gethostname())
         if self.parent_run:
             ## scheduler run as child run
             run_config = RunConfiguration()
@@ -390,6 +397,9 @@ class AzureMLCluster(Cluster):
 
         self.__print_message("Waiting for scheduler node's IP")
 
+        print ("check host name after waiting for scheduler node's IP")
+        print (socket.gethostname())
+
         while (
             run.get_status() != "Canceled"
             and run.get_status() != "Failed"
@@ -438,7 +448,7 @@ class AzureMLCluster(Cluster):
 
     async def __update_links(self):
         hostname = socket.gethostname()
-        print ("check scheduler host name")
+        print ("check scheduler host name in __update_links")
         print (hostname)
         location = self.workspace.get_details()["location"]
         token = self.run.get_metrics()["token"]
@@ -738,6 +748,8 @@ class AzureMLCluster(Cluster):
     def scale_up(self, workers=1):
         """ Scale up the number of workers.
         """
+        print ("check host name in the beginning of __scale_up")
+        print (socket.gethostname())
         run_config = RunConfiguration()
         run_config.target = self.compute_target
         run_config.environment = self.environment_definition
