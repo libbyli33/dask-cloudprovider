@@ -305,8 +305,7 @@ class AzureMLCluster(Cluster):
             ip, port = self.scheduler_ip_port.split(":")
             print (ip)
             print (port)
-            # socket.create_connection((ip, port), 10)
-            socket.create_connection((ip, port), 300)
+            socket.create_connection((ip, port), 10)
             print ("after socket.create_connection")
             self.same_vnet = True
             self.__print_message("On the same VNET")
