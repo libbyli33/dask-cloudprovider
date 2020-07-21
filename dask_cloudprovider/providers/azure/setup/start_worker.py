@@ -30,7 +30,7 @@ if __name__ == "__main__":
     ### PARSE ARGUMENTS
     parser = argparse.ArgumentParser()
     parser.add_argument("--scheduler_ip_port", default=None)
-    parser.add_argument("--worker_death_timeout", default=30)  # 30 seconds
+    parser.add_argument("--worker_death_timeout", default=300) # 300 seconds
     parser.add_argument("--use_gpu", default=False)
     parser.add_argument("--n_gpus_per_node", default=0)
 
