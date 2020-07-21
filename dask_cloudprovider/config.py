@@ -13,3 +13,4 @@ with open(fn) as f:
     defaults = yaml.safe_load(f)
 
 dask.config.update_defaults(defaults)
+dask.config.set({"distributed.admin.tick.limit": "3600s"})
