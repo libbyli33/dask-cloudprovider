@@ -113,8 +113,6 @@ class AzureMLCluster(Cluster):
         asynchronous=False,
         **kwargs,
     ):
-        print ("check host name in the end of the init function")
-        print (socket.gethostname())
         ### REQUIRED PARAMETERS
         self.workspace = workspace
         self.compute_target = compute_target
@@ -225,8 +223,6 @@ class AzureMLCluster(Cluster):
             self.sync(self.__get_defaults)
             self.sync(self.__create_cluster)
 
-        print ("check host name in the end of the init function")
-        print (socket.gethostname())
 
     async def __get_defaults(self):
         self.config = dask.config.get("cloudprovider.azure", {})
@@ -304,26 +300,17 @@ class AzureMLCluster(Cluster):
         Private method to determine if running in the cloud within the same VNET
         and the scheduler node is reachable
         """
-        print ("check_if_schduler_ip_reachable")
         try:
-            print ("in try block")
             ip, port = self.scheduler_ip_port.split(":")
-            print (ip)
-            print (port)
-            print ("check current host")
-            print (socket.gethostbyname(socket.gethostname()))
             socket.create_connection((ip, port), 10)
-            print ("after socket.create_connection")
             self.same_vnet = True
             self.__print_message("On the same VNET")
             logger.info("On the same VNET")
         except socket.timeout as e:
-            print ("hit in the socket.timeout exception")
             self.__print_message("Not on the same VNET")
             logger.info("On the same VNET")
             self.same_vnet = False
         except ConnectionRefusedError as e:
-            print ("hit in the ConnectionRefusedError exception")
             logger.info(e)
             pass
 
@@ -344,8 +331,6 @@ class AzureMLCluster(Cluster):
     async def __create_cluster(self):
         self.__print_message("Setting up cluster")
         run = None
-        print ("check host name in the beginning of __create_clusters")
-        print (socket.gethostname())
         if self.parent_run:
             ## scheduler run as child run
             run_config = RunConfiguration()
@@ -355,21 +340,13 @@ class AzureMLCluster(Cluster):
             for key, value in self.scheduler_params.items():
                 args.append(f"{key}={value}")
 
-            print ("in create_cluster")
             file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
             dataset_config_name = self.kwargs.get('dataset_config_name', None)
             path_on_compute = self.kwargs.get('path_on_compute', None)
-            print ("check kwargs")
-            print (file_dataset_registered_name)
-            print (dataset_config_name)
-            print (path_on_compute)
             if path_on_compute is not None:
-                print ("path_on_compute is not None")
                 dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
                 input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
                 args.append(input1)
-                print ("after DataConsumption Config has been appended to args")
-                print (args)
 
             child_run_config = ScriptRunConfig(
                 source_directory=os.path.join(self.abs_path, "setup"),
@@ -396,9 +373,6 @@ class AzureMLCluster(Cluster):
             run = exp.submit(estimator, tags=self.tags)
 
         self.__print_message("Waiting for scheduler node's IP")
-
-        print ("check host name after waiting for scheduler node's IP")
-        print (socket.gethostname())
 
         while (
             run.get_status() != "Canceled"
@@ -448,8 +422,6 @@ class AzureMLCluster(Cluster):
 
     async def __update_links(self):
         hostname = socket.gethostname()
-        print ("check scheduler host name in __update_links")
-        print (hostname)
         location = self.workspace.get_details()["location"]
         token = self.run.get_metrics()["token"]
 
@@ -748,8 +720,6 @@ class AzureMLCluster(Cluster):
     def scale_up(self, workers=1):
         """ Scale up the number of workers.
         """
-        print ("check host name in the beginning of __scale_up")
-        print (socket.gethostname())
         run_config = RunConfiguration()
         run_config.target = self.compute_target
         run_config.environment = self.environment_definition
@@ -762,21 +732,13 @@ class AzureMLCluster(Cluster):
             f"--worker_death_timeout={self.worker_death_timeout}",
         ]
 
-        print ("in scale up")
         file_dataset_registered_name = self.kwargs.get('file_dataset_registered_name', None)
         dataset_config_name = self.kwargs.get('dataset_config_name', None)
         path_on_compute = self.kwargs.get('path_on_compute', None)
-        print ("check kwargs")
-        print (file_dataset_registered_name)
-        print (dataset_config_name)
-        print (path_on_compute)
         if path_on_compute is not None:
-            print ("path_on_compute is not None")
             dataset = Dataset.get_by_name(workspace=self.workspace, name=file_dataset_registered_name)
             input1 = dataset.as_named_input(dataset_config_name).as_mount(path_on_compute=path_on_compute)
             args.append(input1)
-            print ("after DataConsumption Config has been appended to args")
-            print (args)
 
         child_run_config = ScriptRunConfig(
             source_directory=os.path.join(self.abs_path, "setup"),
@@ -789,8 +751,6 @@ class AzureMLCluster(Cluster):
             child_run = self.run.submit_child(child_run_config, tags=self.tags)
             self.workers_list.append(child_run)
             hostname = socket.gethostname()
-            print ("check worker host name")
-            print (hostname)
 
     # scale down
     def scale_down(self, workers=1):
